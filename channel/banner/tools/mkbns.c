@@ -203,6 +203,7 @@ void repack_adpcm(int idx, int16_t *table, uint8_t *data, int16_t *inbuf)
 	uint8_t testdata[8];
 	int16_t tlsamps[2];
 	int16_t blsamps[2];
+	blsamps[0] = 0, blsamps[1] = 0;
 	float error;
 	float besterror = 99999999.0f;
 	for(tblidx = 0; tblidx < 8; tblidx++) {
@@ -242,15 +243,15 @@ int main(int argc, char **argv)
 	if(argc > 4 && (atoi(argv[3]) == 1))
 		separated_loop = 1;	
 	
-	f = fopen(argv[1],"r");
-	fo = fopen(argv[2],"w");
+	f = fopen(argv[1],"rb");
+	fo = fopen(argv[2],"wb");
 	
 	fseek(f,0,SEEK_END);
 	
 	samples = ftell(f)/(sizeof(uint16_t)*2);
 	
 	if(separated_loop) {
-		f2 = fopen(argv[4],"r");
+		f2 = fopen(argv[4],"rb");
 		fseek(f2,0,SEEK_END);
 		loop_pt = samples;
 		samples += ftell(f2)/(sizeof(uint16_t)*2);

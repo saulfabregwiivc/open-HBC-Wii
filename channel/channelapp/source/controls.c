@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <ogcsys.h>
 #include <ogc/lwp_watchdog.h>
+#include <wiidrc/wiidrc.h>
 
 #include "../config.h"
 
@@ -16,6 +18,13 @@ WPADData *wpads[WPAD_MAX_WIIMOTES];
 static int rumbling = 0;
 
 void controls_init (void) {
+	WiiDRC_Init ();
+	if(WiiDRC_Inited() && WiiDRC_Connected())
+	{	//Wii VC cannot go back to this channel
+		memset((u32 *) 0x80001800, 0, 0x1800);
+		DCFlushRange((u32 *) 0x80001800, 0x1800);
+	}
+
 	int i;
 
 	i = WPAD_Init ();
@@ -99,6 +108,39 @@ static u32 wpad_button_transform(WPADData *wd, u32 btns) {
 	return (btns&0xffff) << 16;
 }
 
+static u32 wiidrc_to_wpad(u32 btns) {
+	u32 ret = 0;
+
+	if(btns & WIIDRC_BUTTON_LEFT)
+		ret |= WPAD_BUTTON_LEFT;
+	if(btns & WIIDRC_BUTTON_RIGHT)
+		ret |= WPAD_BUTTON_RIGHT;
+	if(btns & WIIDRC_BUTTON_UP)
+		ret |= WPAD_BUTTON_UP;
+	if(btns & WIIDRC_BUTTON_DOWN)
+		ret |= WPAD_BUTTON_DOWN;
+	if(btns & WIIDRC_BUTTON_A)
+		ret |= WPAD_BUTTON_A;
+	if(btns & WIIDRC_BUTTON_B)
+		ret |= WPAD_BUTTON_B;
+	if(btns & WIIDRC_BUTTON_X)
+		ret |= WPAD_BUTTON_1;
+	if(btns & WIIDRC_BUTTON_Y)
+		ret |= WPAD_BUTTON_2;
+	if((btns & WIIDRC_BUTTON_ZL) || (btns & WIIDRC_BUTTON_MINUS))
+		ret |= WPAD_BUTTON_MINUS;
+	if((btns & WIIDRC_BUTTON_ZR) || (btns & WIIDRC_BUTTON_PLUS))
+		ret |= WPAD_BUTTON_PLUS;
+	if(btns & WIIDRC_BUTTON_HOME)
+		ret |= WPAD_BUTTON_HOME;
+	if(btns & WIIDRC_BUTTON_L)
+		ret |= PADW_BUTTON_NET_INIT;
+	if(btns & WIIDRC_BUTTON_R)
+		ret |= PADW_BUTTON_SCREENSHOT;
+
+	return (ret&0xffff) << 16;
+}
+
 void controls_scan (u32 *down, u32 *held, u32 *up) {
 	u32 bd, bh, bu;
 	int i;
@@ -156,6 +198,14 @@ void controls_scan (u32 *down, u32 *held, u32 *up) {
 		WPAD_Rumble (last_owner, 0);
 		if(pointer_owner >= 0)
 			WPAD_Rumble(pointer_owner, 1);
+	}
+
+	if(WiiDRC_Inited() && WiiDRC_Connected())
+	{
+		WiiDRC_ScanPads();
+		bd |= wiidrc_to_wpad(WiiDRC_ButtonsDown());
+		bh |= wiidrc_to_wpad(WiiDRC_ButtonsHeld());
+		bu |= wiidrc_to_wpad(WiiDRC_ButtonsUp());
 	}
 
 	if (down)

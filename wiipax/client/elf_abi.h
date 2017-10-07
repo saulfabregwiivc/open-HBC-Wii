@@ -33,6 +33,7 @@
 #ifndef _ELF_ABI_H
 #define _ELF_ABI_H
 
+#include <sys/param.h>
 #include "common.h"
 
 /*

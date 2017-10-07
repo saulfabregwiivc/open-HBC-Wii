@@ -19,7 +19,7 @@ except ImportError:
     from Crypto.Hash import SHA
     from Crypto.PublicKey import RSA
     from Crypto.Util.number import bytes_to_long, long_to_bytes
-    from Crypto.Signature import pkcs1_15
+    from Crypto.Signature import PKCS1_v1_5
 
 import ec
 
@@ -32,7 +32,7 @@ sigtypes = [ "RSA-4096", "RSA-2048", "EC-DSA" ]
 def load_rsa_key(issuer):
     print "Loading private key for %s" % issuer
     path = os.path.join(os.environ["HOME"], ".wii", "dpki", issuer + ".pem")
-    return RSA.importKey(open(path, "r").read())
+    return RSA.importKey(open(path, "rb").read())
 
 signkeyfuncs = [ load_rsa_key, load_rsa_key, None ]
 

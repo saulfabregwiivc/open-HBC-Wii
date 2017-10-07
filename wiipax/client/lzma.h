@@ -1,6 +1,7 @@
 #ifndef _LZMA_H_
 #define _LZMA_H_
 
+#include <sys/param.h>
 #include "common.h"
 #include "LzmaEnc.h"
 

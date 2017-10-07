@@ -2,11 +2,11 @@ import os, sys, struct, md5
 
 output, datafile, iconarc, bannerarc, soundbns, namesfile = sys.argv[1:]
 
-data = open(datafile,"r").read()
+data = open(datafile,"rb").read()
 
 names={}
 
-for i in open(namesfile,"r"):
+for i in open(namesfile,"rb"):
 	a,b = i.split("=")
 	while b[-1] == "\n":
 		b = b[:-1]
@@ -34,9 +34,9 @@ imet += "\x00"*(0x600 - len(imet))
 
 imet = imet[:-16] + md5.new(imet).digest()
 
-open(output,"w").write(imet)
+open(output,"wb").write(imet)
 
-f = open(sys.argv[1],"w")
+f = open(sys.argv[1],"wb")
 f.write(imet)
 f.write(data)
 

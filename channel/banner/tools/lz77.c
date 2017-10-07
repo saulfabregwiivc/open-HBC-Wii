@@ -247,22 +247,24 @@ int LZ_Compress( unsigned char *in, unsigned char *out,
 
 int main(int argc, char *argv[])
 {
-	int in, out, size;
-	struct stat buf;
+	FILE *in, *out;
+	int insize, size;
 	unsigned char *uncompressed, *compressed;
    
 	if (argc == 3) {
-		in = open(argv[1], O_RDONLY);
-		out = creat(argv[2], 0600);
-		fstat(in, &buf);
-		uncompressed = malloc(buf.st_size);
-		read(in, uncompressed, buf.st_size);
-		close(in);
-		compressed = malloc(buf.st_size*2);
-		size = LZ_Compress(uncompressed, compressed, buf.st_size);
-		write(out, "LZ77", 4);
-		write(out, compressed, size);
-		close(out);
+		in = fopen(argv[1], "rb");
+		out = fopen(argv[2], "wb");
+		fseek(in,0,SEEK_END);
+		insize = ftell(in);
+		fseek(in,0,SEEK_SET);
+		uncompressed = malloc(insize);
+		fread(uncompressed, 1, insize, in);
+		fclose(in);
+		compressed = malloc(insize*2);
+		size = LZ_Compress(uncompressed, compressed, insize);
+		fwrite("LZ77", 1, 4, out);
+		fwrite(compressed, 1, size, out);
+		fclose(out);
 		free(compressed);
 		free(uncompressed);
 		return 0;

@@ -43,6 +43,7 @@ all: xxd
 xxd: $(TARGET)
 	@echo "  XXD       $^"
 	@xxd -i $(TARGET) > $(subst .elf,.c,$(TARGET))
+	@cp -f $(subst .elf,.c,$(TARGET)) ../client
 
 distclean: clean
 	rm -f stub_*.elf stub_*.c

@@ -374,10 +374,10 @@ for i in col.Instances:
 col.render()
 
 brldata = brlyt.Pack()
-open(sys.argv[1],"w").write(brldata)
+open(sys.argv[1],"wb").write(brldata)
 
 bradata = brlan.Pack(loopStart)
-open(sys.argv[2],"w").write(bradata)
+open(sys.argv[2],"wb").write(bradata)
 
 bradata = brlan.Pack(loopStart, loopEnd)
-open(sys.argv[3],"w").write(bradata)
+open(sys.argv[3],"wb").write(bradata)

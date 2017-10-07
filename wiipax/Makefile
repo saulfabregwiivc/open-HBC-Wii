@@ -4,7 +4,7 @@ all:
 
 clean distclean:
 	$(MAKE) -C stub distclean
-	$(MAKE) -C client clean
+	$(MAKE) -C client distclean
 
 install:
 	$(MAKE) -C client install

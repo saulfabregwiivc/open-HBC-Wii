@@ -1,7 +1,7 @@
 CFLAGS += -Wall -Wextra -Os -g -pipe
 
 ifeq ($(WIN32), 1)
-PREFIX ?= i586-mingw32msvc-
+#PREFIX ?= i586-mingw32msvc-
 BIN_EXT = .exe
 CFLAGS += -Iwin32/include
 LDFLAGS += -Lwin32/lib -lws2_32 -lz

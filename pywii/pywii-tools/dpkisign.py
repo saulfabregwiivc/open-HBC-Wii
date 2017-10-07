@@ -20,7 +20,7 @@ else:
 	print "EYOUFAILIT"
 	sys.exit(1)
 
-certs, certlist = pywii.parse_certs(open(certfile).read())
+certs, certlist = pywii.parse_certs(open(certfile,"rb").read())
 
 signed.update_issuer(issuer)
 

@@ -11,10 +11,16 @@ all: channel_retail.wad
 dpki: channel_dpki.wad
 
 channel_retail.wad: retail/cetk retail/tmd 00000000 00000001
-	@$(TOOLS)/wadpack.py $@ retail/
+	@cp -f 00000000 retail
+	@cp -f 00000001 retail
+	@cp -f footer retail
+	@python2 $(TOOLS)/wadpack.py $@ retail/
 
 channel_dpki.wad: dpki/cetk dpki/tmd 00000000 00000001
-	@$(TOOLS)/wadpack.py -dpki $@ dpki/
+	@cp -f 00000000 retail
+	@cp -f 00000001 retail
+	@cp -f footer retail
+	@python2 $(TOOLS)/wadpack.py -dpki $@ dpki/
 
 00000000: ../banner/channel.imet
 	@cat footer $< > $@
@@ -24,27 +30,28 @@ channel_dpki.wad: dpki/cetk dpki/tmd 00000000 00000001
 
 retail/cetk: cetk.template
 	@cp $< $@
-	@$(TOOLS)/tikfix.py $@
+	@python2 $(TOOLS)/tikfix.py $@
 
 dpki/cetk: retail/cetk
-	@$(TOOLS)/dpkisign.py -cetk $< $@ $(CERTS) $(DPKI_ISSUER_TIK)
+	@python2 $(TOOLS)/dpkisign.py -cetk $< $@ $(CERTS) $(DPKI_ISSUER_TIK)
 
 retail/tmd: tmd.template 00000000 00000001
 	@cp $< $@
-	@$(TOOLS)/tmdupdatecr.py $@ $(CURDIR)
-	@$(TOOLS)/tmdvers.py $@ $(INSTALLER_VER_MAJOR) $(INSTALLER_VER_MINOR)
+	@python2 $(TOOLS)/tmdupdatecr.py $@ $(CURDIR)
+	@python2 $(TOOLS)/tmdvers.py $@ $(INSTALLER_VER_MAJOR) $(INSTALLER_VER_MINOR)
 
 dpki/tmd: retail/tmd
-	@$(TOOLS)/dpkisign.py -tmd $< $@ $(CERTS) $(DPKI_ISSUER_TMD)
+	@python2 $(TOOLS)/dpkisign.py -tmd $< $@ $(CERTS) $(DPKI_ISSUER_TMD)
 
 check: all dpki
 	@echo ===== RETAIL =====
-	@$(TOOLS)/tikinfo.py retail/cetk retail/certs
-	@$(TOOLS)/tmdinfo.py retail/tmd retail/certs
+	@python2 $(TOOLS)/tikinfo.py retail/cetk retail/certs
+	@python2 $(TOOLS)/tmdinfo.py retail/tmd retail/certs
 	@echo ===== DPKI =====
-	@$(TOOLS)/tikinfo.py -dpki dpki/cetk dpki/certs
-	@$(TOOLS)/tmdinfo.py -dpki dpki/tmd dpki/certs
+	@python2 $(TOOLS)/tikinfo.py -dpki dpki/cetk dpki/certs
+	@python2 $(TOOLS)/tmdinfo.py -dpki dpki/tmd dpki/certs
 
 clean:
-	rm -f retail/cetk dpki/cetk retail/tmd retail/tmd 00000000 00000001 channel_retail.wad channel_dpki.wad
+	rm -f retail/cetk dpki/cetk retail/tmd dpki/tmd retail/footer dpki/footer retail/00000000 retail/00000001 \
+	dpki/00000000 dpki/00000001 channel_retail.wad channel_dpki.wad
 

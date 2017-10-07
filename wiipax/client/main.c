@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/param.h>
 
 #include "common.h"
 #include "lzma.h"
@@ -83,51 +84,53 @@ static elf_t *read_stub(const char *name) {
 }
 
 static elf_t *read_elf(const char *filename) {
-	int fd;
-	struct stat st;
+	FILE *f;
+	size_t len;
 	elf_t *elf;
 
 	printf("Reading %s\n", filename);
 
-	fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		perrordie("Could not open ELF file");
+	f = fopen(filename, "rb");
+	if (f == NULL)
+		die("Could not open ELF file");
 
-	if (fstat(fd, &st))
-		perrordie("Could not stat ELF file");
+	fseek(f,0,SEEK_END);
+	len = ftell(f);
+	fseek(f,0,SEEK_SET);
 
-	if ((u32) st.st_size < sizeof(Elf32_Ehdr))
+	if ((u32) len < sizeof(Elf32_Ehdr))
 		die("File too short for ELF");
 
 	elf = (elf_t *) calloc(1, sizeof(elf_t));
 	if (!elf)
 		die("Error allocating %u bytes", (u32) sizeof(elf_t));
 
-	elf->len = st.st_size;
+	elf->len = len;
 	elf->data = (u8 *) malloc(elf->len);
+	printf("elf->len is %u bytes\n", elf->len);
 
 	if (!elf->data)
 		die("Error allocating %u bytes", elf->len);
 
-	if (read(fd, elf->data, elf->len) != elf->len)
-		perrordie("Could not read from file");
+	if ((u32)fread(elf->data, 1, elf->len, f) != elf->len)
+		die("Could not read from file");
 
-	close(fd);
+	fclose(f);
 
 	return elf;
 }
 
 static void write_elf(const char *filename, const elf_t *elf) {
-	int fd;
+	FILE *f;
 
-	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0755);
-	if (fd < 0)
-		perrordie("Could not open ELF file");
+	f = fopen(filename, "wb");
+	if (f == NULL)
+		die("Could not open ELF file");
 
-	if (write(fd, elf->data, elf->len) != elf->len)
-		perrordie("Could not write ELF file");
+	if ((u32)fwrite(elf->data, 1, elf->len, f) != elf->len)
+		die("Could not write ELF file");
 
-	close(fd);
+	fclose(f);
 }
 
 static void free_elf(elf_t *elf) {

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/param.h>
 
 #include "common.h"
 #include "lzma.h"
@@ -97,27 +98,27 @@ void lzma_decode(const lzma_t *lzma, u8 *dst) {
 }
 
 void lzma_write(const char *filename, const lzma_t *lzma) {
-	int fd;
+	FILE *fd;
 	int i;
 
-	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0755);
-	if (fd < 0)
+	fd = fopen(filename, "wb");
+	if (fd == NULL)
 		perrordie("Could not open file");
 
-	if (write(fd, lzma->props, LZMA_PROPS_SIZE) != LZMA_PROPS_SIZE)
+	if (fwrite(lzma->props, 1, LZMA_PROPS_SIZE, fd) != LZMA_PROPS_SIZE)
 		perrordie("Could not write to file");
 
 	u64 size = lzma->len_in;
 	for (i = 0; i < 8; ++i) {
 		u8 j = size & 0xff;
 		size >>= 8;
-		if (write(fd, &j, 1) != 1)
+		if (fwrite(&j, 1, 1, fd) != 1)
 			perrordie("Could not write to file");
 	}
 
-	if (write(fd, lzma->data, lzma->len_out) != lzma->len_out)
+	if (fwrite(lzma->data, 1, lzma->len_out, fd) != lzma->len_out)
 		perrordie("Could not write to file");
 
-	close(fd);
+	fclose(fd);
 }
 

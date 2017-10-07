@@ -12,3 +12,5 @@ include ../../common.mk
 install: all
 	install -m 755 $(TARGET) $(WIIDEV)/bin
 
+distclean: clean
+	rm -f stub_dkf.c stub_dkf_debug.c stub_dkfc.c stub_dkfc_debug.c stub_mini.c stub_mini_debug.c

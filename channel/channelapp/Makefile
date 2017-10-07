@@ -33,7 +33,7 @@ DIR_LIBS = \
 		$(DEVKITPRO)/libogc/lib/wii \
 		$(DEVKITPRO)/portlibs/ppc/lib
 
-LIBS = fat wiiuse bte mxml png15 z ogc m db freetype
+LIBS = fat wiiuse bte wiidrc mxml png15 z ogc m db freetype
 
 MACHDEP = -g -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
 CFLAGS = $(MACHDEP) -Os -Wall -DBASE_ADDR=$(BASE_ADDR) $(DIR_INCLUDES:%=-I%)
@@ -116,6 +116,10 @@ $(TARGET_APP).elf: $(TARGET_APP)_nopax.elf
 $(TARGET_CHAN).elf: $(TARGET_APP)_nopax.elf
 	@echo $(@F)
 	@$(WIIPAX) -s dkfailchannel $< $@
+
+$(TARGET_CHAN).dol: $(TARGET_CHAN).elf $(ELF2DOL)
+	@echo $(@F)
+	@$(ELF2DOL) $< $@
 
 $(DIR_BUILD)/$(TARGET_STUB)_bin.o: $(TARGET_STUB).bin
 	@echo $(@F)
