@@ -24,13 +24,38 @@
 #include "usb.h"
 #include "ios.h"
 #include "cache.h"
+#include "di.h"
 #include "../config.h"
 
 #define IOCTL_ES_LAUNCH					0x08
 #define IOCTL_ES_GETVIEWCNT				0x12
 #define IOCTL_ES_GETVIEWS				0x13
 
-struct ioctlv vecs[3] __attribute__((aligned(32)));
+static struct ioctlv vecs[3] __attribute__((aligned(32)));
+
+static u32 disc_id[0x40] __attribute__((aligned(32)));
+
+static u8 tmd[0x5000] __attribute__((aligned(64)));
+
+static struct {
+	u32 count;
+	u32 offset;
+	u32 pad[6];
+} part_table_info __attribute__((aligned(32)));
+
+static struct {
+	u32 offset;
+	u32 type;
+} partition_table[32] __attribute__((aligned(32)));
+
+static struct
+{
+	char revision[16];
+	void *entry;
+	s32 size;
+	s32 trailersize;
+	s32 padding;
+} apploader_hdr __attribute__((aligned(32)));
 
 u64 *conf_magic = STUB_ADDR_MAGIC;
 u64 *conf_titleID = STUB_ADDR_TITLE;
@@ -115,6 +140,7 @@ int es_init(void) {
 	return es_fd;
 }
 
+static void no_report(const char *fmt __attribute__((unused)), ...) { }
 
 void _main (void) {
 		int iosver;
@@ -125,25 +151,74 @@ void _main (void) {
 		if(*conf_magic == STUB_MAGIC) titleID = *conf_titleID;
 			
 		reset_ios();
+		if(*(vu32*)0x8000180C == 1) //if Wii VC
+		{
+			//Code from TinyLoad - a simple region free (original) game launcher in 4k
+			void (*app_entry)(void(**init)(void (*report)(const char *fmt, ...)), int (**main)(), void *(**final)());
+			void (*app_init)(void (*report)(const char *fmt, ...));
+			int (*app_main)(void **dst, int *size, int *offset);
+			void *(*app_final)(void);
+			void (*entrypoint)(void) __attribute__((noreturn));
 
-		if(es_init() < 0) goto fail;
+			di_init();
+			di_reset();
+			di_identify();
+			di_readdiscid(disc_id);
+			di_unencryptedread(&part_table_info, sizeof(part_table_info), 0x10000);
+			di_unencryptedread(partition_table, sizeof(partition_table), part_table_info.offset);
+			int i;
+			for(i=0; i<part_table_info.count; i++) {
+				if(partition_table[i].type == 0) {
+					break;
+				}
+			}
+			di_openpartition(partition_table[i].offset, tmd);
+			di_read((void*)0x80000000, 0x20, 0);
+			di_read(&apploader_hdr, 0x20, 0x910);
+			di_read((void*)0x81200000, apploader_hdr.size+apploader_hdr.trailersize, 0x918);
+			ICInvalidateRange((void*)0x81200000, apploader_hdr.size+apploader_hdr.trailersize);
 
-		iosver = STUB_LOAD_IOS_VERSION;
-		if(iosver < 0)
-			iosver = 21; //bah
-		printversion();
-		debug_string("\n\rReloading IOS...\n\r");
-		LaunchTitle(0x0000000100000000LL | iosver);
-		printversion();
+			app_entry = apploader_hdr.entry;
+			app_entry(&app_init, &app_main, &app_final);
+			app_init(no_report);
 
-		if(es_init() < 0) goto fail;
-		debug_string("\n\rLoading requested channel...\n\r");
-		LaunchTitle(titleID);
-		// if fail, try system menu
-		debug_string("\n\rChannel load failed, trying with system menu...\n\r");
-		LaunchTitle(0x0000000100000002LL);
-		printversion();
+			while(1) {
+				void *dst;
+				int size;
+				int offset;
+				int res;
 
+				res = app_main(&dst, &size, &offset);
+				if(res != 1)
+					break;
+				di_read(dst, size, offset);
+				ICInvalidateRange(dst, size);
+			}
+			di_shutdown();
+
+			entrypoint = app_final();
+			entrypoint();
+		}
+		else
+		{
+			if(es_init() < 0) goto fail;
+
+			iosver = STUB_LOAD_IOS_VERSION;
+			if(iosver < 0)
+				iosver = 21; //bah
+			printversion();
+			debug_string("\n\rReloading IOS...\n\r");
+			LaunchTitle(0x0000000100000000LL | iosver);
+			printversion();
+
+			if(es_init() < 0) goto fail;
+			debug_string("\n\rLoading requested channel...\n\r");
+			LaunchTitle(titleID);
+			// if fail, try system menu
+			debug_string("\n\rChannel load failed, trying with system menu...\n\r");
+			LaunchTitle(0x0000000100000002LL);
+			printversion();
+		}
 fail:
 		debug_string("FAILURE\n\r");
 		while(1);

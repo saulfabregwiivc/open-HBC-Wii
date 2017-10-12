@@ -52,6 +52,6 @@ check: all dpki
 	@python2 $(TOOLS)/tmdinfo.py -dpki dpki/tmd dpki/certs
 
 clean:
-	rm -f retail/cetk dpki/cetk retail/tmd dpki/tmd retail/footer dpki/footer retail/00000000 retail/00000001 \
-	dpki/00000000 dpki/00000001 channel_retail.wad channel_dpki.wad
+	rm -f retail/cetk dpki/cetk retail/tmd dpki/tmd retail/footer dpki/footer 00000000 00000001 \
+	retail/00000000 retail/00000001 dpki/00000000 dpki/00000001 channel_retail.wad channel_dpki.wad
 

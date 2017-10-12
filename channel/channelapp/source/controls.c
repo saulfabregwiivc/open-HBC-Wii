@@ -20,8 +20,8 @@ static int rumbling = 0;
 void controls_init (void) {
 	WiiDRC_Init ();
 	if(WiiDRC_Inited() && WiiDRC_Connected())
-	{	//Wii VC cannot go back to this channel
-		memset((u32 *) 0x80001800, 0, 0x1800);
+	{	//Set stub to do Wii VC routine
+		*(vu32*)0x8000180C = 1;
 		DCFlushRange((u32 *) 0x80001800, 0x1800);
 	}
 

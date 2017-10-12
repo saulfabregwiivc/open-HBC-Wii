@@ -205,6 +205,33 @@ int ios_close(int fd)
 	return ipc.result;
 }
 
+int ios_ioctl(int fd, u32 n, void *in, u32 in_size, void *out, u32 out_size)
+{
+	memset(&ipc, 0, sizeof ipc);
+
+	if(in)
+		DCFlushRange(in, in_size);
+	if(out)
+		DCFlushRange(out, out_size);
+
+	ipc.arg[0] = n;
+	ipc.arg[1] = (u32)virt_to_phys(in);
+	ipc.arg[2] = in_size;
+	ipc.arg[3] = (u32)virt_to_phys(out);
+	ipc.arg[4] = out_size;
+
+	ipc.cmd = 6;
+	ipc.fd = fd;
+
+	ipc_send_request();
+	ipc_recv_reply();
+
+	if(out)
+		DCInvalidateRange(out, out_size);
+
+	return ipc.result;
+}
+
 int _ios_ioctlv(int fd, u32 n, u32 in_count, u32 out_count, struct ioctlv *vec, int reboot)
 {
 	u32 i;
